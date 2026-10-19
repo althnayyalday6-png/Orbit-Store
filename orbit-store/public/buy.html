@@ -1,0 +1,14 @@
+<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="icon" href="/logo.png"><link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;800&display=swap" rel="stylesheet"><link rel="stylesheet" href="/style.css"></head><body>
+<div class="box" id="box">...</div>
+<script src="/app.js"></script><script>
+layout().then(async({m})=>{const box=$('#box'),id=location.pathname.split('/').pop();let p;
+try{p=await api('/api/products/'+id)}catch{box.innerHTML='<h2>المنتج غير موجود</h2>';return}
+const h=`<img src="${p.image}" style="width:100%;border-radius:14px" alt=""><h2>${esc(p.name)}</h2><p class="mut">${esc(p.desc)}</p><div class="price">${p.price} ر.س</div><hr style="border-color:var(--line);margin:14px 0">`;
+if(!m.user){box.innerHTML=h+`<p>⚠️ ربط حساب ديسكورد <b>إجباري</b> حتى يصلك المنتج في الخاص.</p><br><a class="btn" href="/login?next=${encodeURIComponent(location.pathname)}">ربط حساب ديسكورد</a>`;return}
+const b=await api('/api/bank');
+box.innerHTML=h+`<p>✅ الحساب المربوط: <b>${esc(m.user.name)}</b></p><h3>💳 ادفع بالتحويل البنكي</h3><div class="bank">البنك: ${esc(b.bank)}<br>الآيبان: <b id="ib" dir="ltr">${esc(b.iban)}</b> <button class="btn ghost" id="cp">نسخ</button><br>اسم المستفيد: ${esc(b.beneficiary)}<br>المبلغ: <b>${p.price} ر.س</b></div><label>أرفق إيصال التحويل</label><input type="file" id="f" accept="image/*"><button class="btn" id="go">إرسال الطلب</button><p id="msg"></p>`;
+$('#cp').onclick=()=>navigator.clipboard.writeText($('#ib').textContent);
+$('#go').onclick=async()=>{const f=$('#f').files[0];if(!f)return $('#msg').textContent='أرفق صورة الإيصال';
+try{$('#go').disabled=true;await api('/api/orders',{method:'POST',body:{productId:p.id,receipt:await toData(f,1200)}});box.innerHTML='<h2>✅ تم إرسال طلبك</h2><p class="mut">سيصلك المنتج في الخاص على ديسكورد بعد مراجعة الحوالة وقبولها. تأكد أن خاصك مفتوح.</p>'}
+catch(e){$('#msg').textContent=e.message;$('#go').disabled=false}}});
+</script></body></html>

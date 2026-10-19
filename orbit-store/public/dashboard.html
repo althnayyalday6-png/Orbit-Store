@@ -1,0 +1,27 @@
+<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="icon" href="/logo.png"><link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;800&display=swap" rel="stylesheet"><link rel="stylesheet" href="/style.css"></head><body>
+<main class="wrap" id="app"></main>
+<script src="/app.js"></script><script>
+const T=f=>async(...a)=>{try{await f(...a)}catch(e){alert(e.message)}};
+layout().then(({m})=>{const A=$('#app');
+if(!m.user)return A.innerHTML='<div class="box"><a class="btn" href="/login?next=/dashboard">دخول بديسكورد</a></div>';
+if(!m.admin)return A.innerHTML='<div class="box"><h2>⛔ لا تملك صلاحية</h2><p class="mut">معرّف حسابك لإضافته في ADMIN_IDS:</p><b>'+m.user.id+'</b></div>';
+A.innerHTML=`<div class="tabs"><button class="btn" data-t="pr">المنتجات</button><button class="btn ghost" data-t="or">الطلبات</button><button class="btn ghost" data-t="st">الإعدادات</button></div>
+<section id="pr"><div class="card s"><h2 id="ft">➕ إضافة منتج</h2><input type="hidden" id="pid"><label>اسم المنتج</label><input id="pn"><label>السعر (ر.س)</label><input id="pp" type="number" min="1" step="0.01"><label>وصف مختصر</label><textarea id="pd" rows="2"></textarea><label>محتوى التسليم (يُرسل للعميل في الخاص بعد القبول)</label><textarea id="pl" rows="3"></textarea><label>صورة المنتج</label><input id="pi" type="file" accept="image/*"><button class="btn" id="ps">حفظ المنتج</button> <button class="btn ghost" id="pc">إلغاء</button></div><br><div class="grid" id="plist"></div></section>
+<section id="or" hidden><div class="tw"><table><thead><tr><th>#</th><th>العميل</th><th>المنتج</th><th>السعر</th><th>الحالة</th><th>الإيصال</th><th></th></tr></thead><tbody id="olist"></tbody></table></div></section>
+<section id="st" hidden><div class="card s"><label>اسم المتجر</label><input id="s_storeName"><label>إعلان الصفحة الرئيسية</label><input id="s_announce"><label>اسم البنك</label><input id="s_bank"><label>رقم الآيبان</label><input id="s_iban" dir="ltr"><label>اسم المستفيد</label><input id="s_beneficiary"><label>الشروط والأحكام</label><textarea id="s_terms" rows="9"></textarea><button class="btn" id="ss">حفظ الإعدادات</button></div></section>`;
+const tabs=[...document.querySelectorAll('[data-t]')];
+tabs.forEach(b=>b.onclick=()=>tabs.forEach(x=>{x.classList.toggle('ghost',x!==b);document.getElementById(x.dataset.t).hidden=x!==b}));
+let PL=[];const reset=()=>{['pid','pn','pp','pd','pl','pi'].forEach(i=>$('#'+i).value='');$('#ft').textContent='➕ إضافة منتج'};
+const lp=T(async()=>{PL=await api('/api/admin/products');$('#plist').innerHTML=PL.map(p=>`<div class="card"><img class="p" src="${p.image}" alt=""><div class="b"><b>${esc(p.name)}</b><div class="price">${p.price} ر.س</div><button class="btn ghost" onclick="ed('${p.id}')">تعديل</button> <button class="btn red" onclick="del('${p.id}')">حذف</button></div></div>`).join('')||'<p class="mut">لا توجد منتجات</p>'});
+window.ed=id=>{const p=PL.find(x=>x.id===id);$('#pid').value=id;$('#pn').value=p.name;$('#pp').value=p.price;$('#pd').value=p.desc;$('#pl').value=p.delivery;$('#ft').textContent='✏️ تعديل منتج';scrollTo(0,0)};
+window.del=T(async id=>{if(confirm('حذف المنتج؟')){await api('/api/admin/products/'+id,{method:'DELETE'});lp()}});
+$('#pc').onclick=reset;
+$('#ps').onclick=T(async()=>{const f=$('#pi').files[0],id=$('#pid').value;const body={name:$('#pn').value,price:$('#pp').value,desc:$('#pd').value,delivery:$('#pl').value};if(f)body.image=await toData(f,800);
+await api('/api/admin/products'+(id?'/'+id:''),{method:id?'PUT':'POST',body});reset();lp()});
+const lo=T(async()=>{const L=await api('/api/admin/orders');$('#olist').innerHTML=L.map(o=>`<tr><td>${o.id}</td><td>${esc(o.userName)}<br><small class="mut">${o.userId}</small></td><td>${esc(o.productName)}</td><td>${o.price}</td><td>${{pending:'⏳ بانتظار',accepted:'✅ مقبول',rejected:'❌ مرفوض'}[o.status]}${o.dm===false?' ⚠️ الخاص مغلق':''}</td><td><a href="/receipt/${o.id}" target="_blank">عرض</a></td><td>${o.status==='pending'?`<button class="btn" onclick="act('${o.id}','accept')">قبول</button> <button class="btn red" onclick="act('${o.id}','reject')">رفض</button>`:''}</td></tr>`).join('')});
+window.act=T(async(id,a)=>{const reason=a==='reject'?(prompt('سبب الرفض (اختياري)')||''):'';const r=await api('/api/admin/orders/'+id+'/'+a,{method:'POST',body:{reason}});if(r.dm===false)alert('تعذّر إرسال الخاص للعميل — خاصه مغلق');lo()});
+const K=['storeName','announce','bank','iban','beneficiary','terms'];
+api('/api/admin/settings').then(s=>K.forEach(k=>$('#s_'+k).value=s[k]||''));
+$('#ss').onclick=T(async()=>{const b={};K.forEach(k=>b[k]=$('#s_'+k).value);await api('/api/admin/settings',{method:'PUT',body:b});alert('✅ تم الحفظ')});
+lp();lo();setInterval(lo,30000)});
+</script></body></html>

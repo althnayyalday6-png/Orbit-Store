@@ -1,0 +1,11 @@
+<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="icon" href="/logo.png"><link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;800&display=swap" rel="stylesheet"><link rel="stylesheet" href="/style.css"></head><body>
+<section class="hero"><div class="orbit"><i></i><img src="/logo.png" alt=""></div><h1>مرحباً في <span class="grad" id="sn">Orbit Store</span></h1><p class="mut" id="ann"></p><br><a class="btn" href="#products">تصفح المنتجات</a></section>
+<section class="sec"><div class="grid">
+<div class="card s"><h2>1️⃣ افتح تذكرة</h2><p class="mut">من ديسكورد اضغط «الشراء الذاتي» وتصفّح المنتجات.</p></div>
+<div class="card s"><h2>2️⃣ حوّل وارفق الإيصال</h2><p class="mut">اربط حسابك، حوّل المبلغ بنكياً وارفق صورة الإيصال.</p></div>
+<div class="card s"><h2>3️⃣ استلم في الخاص</h2><p class="mut">بعد قبول الحوالة يصلك طلبك مباشرة في رسائلك الخاصة.</p></div></div></section>
+<section class="sec" id="products"><h2>🛍️ المنتجات</h2><div class="grid" id="grid"></div></section>
+<script src="/app.js"></script><script>
+layout().then(async({p})=>{$('#sn').textContent=p.storeName;$('#ann').textContent=p.announce;
+const L=await api('/api/products');$('#grid').innerHTML=L.map(x=>`<a class="card" href="/buy/${x.id}"><img class="p" src="${x.image}" alt=""><div class="b"><b>${esc(x.name)}</b><p class="mut">${esc(x.desc)}</p><div class="price">${x.price} ر.س</div><span class="btn">شراء الآن</span></div></a>`).join('')||'<p class="mut">لا توجد منتجات حالياً.</p>'});
+</script></body></html>
